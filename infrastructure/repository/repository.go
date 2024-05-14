@@ -6,6 +6,7 @@ import (
 
 	"github.com/zakiyalmaya/assetfindr-assignment/config"
 	"github.com/zakiyalmaya/assetfindr-assignment/infrastructure/repository/post"
+	"github.com/zakiyalmaya/assetfindr-assignment/infrastructure/repository/tag"
 	"github.com/zakiyalmaya/assetfindr-assignment/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,12 +15,14 @@ import (
 type Repository struct {
 	db   *gorm.DB
 	Post post.PostRepository
+	Tag  tag.TagRepository
 }
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
 		db:   db,
 		Post: post.NewPostRepository(db),
+		Tag:  tag.NewTagRepository(db),
 	}
 }
 

@@ -4,7 +4,7 @@ type Post struct {
 	ID      uint   `gorm:"primaryKey" json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	Tags    []Tag  `gorm:"many2many:post_tags;" json:"tags"`
+	Tags    []*Tag  `gorm:"many2many:post_tags;" json:"tags"`
 }
 
 type CreatePostRequest struct {
