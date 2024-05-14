@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/zakiyalmaya/assetfindr-assignment/application/post"
+	"github.com/zakiyalmaya/assetfindr-assignment/application"
 	"github.com/zakiyalmaya/assetfindr-assignment/infrastructure/repository"
 	"github.com/zakiyalmaya/assetfindr-assignment/transport"
 )
@@ -14,12 +14,12 @@ func main() {
 	repository := repository.NewRepository(db)
 
 	// init service
-	postService := post.NewPostService(repository)
+	service := application.NewService(repository)
 
 	// init router
 	r := gin.Default()
 
-	transport.Handler(postService, r)
+	transport.Handler(service, r)
 
 	r.Run(":8000")
 }

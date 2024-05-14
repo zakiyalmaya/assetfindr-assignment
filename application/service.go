@@ -1,8 +1,8 @@
-package post
+package application
 
 import "github.com/zakiyalmaya/assetfindr-assignment/model"
 
-type PostService interface {
+type Service interface {
 	Create(request *model.CreatePostRequest) error
 	GetAll() ([]*model.Post, error)
 	GetByID(id int) (*model.Post, error)

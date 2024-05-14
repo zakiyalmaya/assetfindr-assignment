@@ -1,4 +1,4 @@
-package post
+package application
 
 import (
 	"log"
@@ -8,15 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type postSvcImpl struct {
+type serviceImpl struct {
 	repo *repository.Repository
 }
 
-func NewPostService(repo *repository.Repository) PostService {
-	return &postSvcImpl{repo: repo}
+func NewService(repo *repository.Repository) Service {
+	return &serviceImpl{repo: repo}
 }
 
-func (p *postSvcImpl) Create(request *model.CreatePostRequest) error {
+func (p *serviceImpl) Create(request *model.CreatePostRequest) error {
 	tags := make([]*model.Tag, len(request.Tags))
 	for i, label := range request.Tags {
 		var tag *model.Tag
@@ -42,18 +42,18 @@ func (p *postSvcImpl) Create(request *model.CreatePostRequest) error {
 	})
 }
 
-func (p *postSvcImpl) GetAll() ([]*model.Post, error) {
+func (p *serviceImpl) GetAll() ([]*model.Post, error) {
 	return p.repo.Post.GetAll()
 }
 
-func (p *postSvcImpl) GetByID(id int) (*model.Post, error) {
+func (p *serviceImpl) GetByID(id int) (*model.Post, error) {
 	return p.repo.Post.GetByID(id)
 }
 
-func (p *postSvcImpl) Update(post *model.Post) error {
+func (p *serviceImpl) Update(post *model.Post) error {
 	return p.repo.Post.Update(post)
 }
 
-func (p *postSvcImpl) Delete(id int) error {
+func (p *serviceImpl) Delete(id int) error {
 	return p.repo.Post.Delete(id)
 }
