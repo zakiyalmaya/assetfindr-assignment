@@ -2,6 +2,7 @@ package application
 
 import (
 	"log"
+	"sync"
 
 	"github.com/zakiyalmaya/assetfindr-assignment/infrastructure/repository"
 	"github.com/zakiyalmaya/assetfindr-assignment/model"
@@ -17,22 +18,38 @@ func NewService(repo *repository.Repository) Service {
 }
 
 func (p *serviceImpl) Create(request *model.CreatePostRequest) error {
+	var wg sync.WaitGroup
 	tags := make([]*model.Tag, len(request.Tags))
+	errChan := make(chan error, len(request.Tags))
+
 	for i, label := range request.Tags {
-		var tag *model.Tag
-		tag, err := p.repo.Tag.GetByLabel(label)
-		if err == gorm.ErrRecordNotFound {
-			tag = &model.Tag{Label: label}
-			if err := p.repo.Tag.Create(tag); err != nil {
-				log.Println("error creating tag: ", err.Error())
-				return err
+		wg.Add(1)
+		go func(i int, label string) {
+			defer wg.Done()
+
+			tag, err := p.repo.Tag.GetByLabel(label)
+			if err == gorm.ErrRecordNotFound {
+				tag = &model.Tag{Label: label}
+				if err := p.repo.Tag.Create(tag); err != nil {
+					errChan <- err
+					return
+				}
+			} else if err != nil {
+				errChan <- err
+				return
 			}
-		} else if err != nil {
-			log.Println("error getting tag: ", err.Error())
+
+			tags[i] = tag
+		}(i, label)
+	}
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			log.Println("error creating or getting tag: ", err.Error())
 			return err
 		}
-
-		tags[i] = tag
 	}
 
 	return p.repo.Post.Create(&model.Post{
