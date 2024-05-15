@@ -1,8 +1,10 @@
 package tag
 
-import "github.com/zakiyalmaya/assetfindr-assignment/model"
+import (
+	"github.com/zakiyalmaya/assetfindr-assignment/model"
+	"gorm.io/gorm"
+)
 
 type TagRepository interface {
-	Create(tag *model.Tag) error
-	GetByLabel(label string) (*model.Tag, error)
+	CreateOrGet(tag *model.Tag, tx *gorm.DB) (*model.Tag, error)
 }

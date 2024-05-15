@@ -7,7 +7,7 @@ type Post struct {
 	Tags    []*Tag  `gorm:"many2many:post_tags;" json:"tags"`
 }
 
-type CreatePostRequest struct {
+type PostRequest struct {
 	Title   string   `json:"title" validate:"required"`
 	Content string   `json:"content" validate:"required"`
 	Tags    []string `json:"tags" validate:"required"`

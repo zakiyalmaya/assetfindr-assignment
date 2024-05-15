@@ -13,14 +13,14 @@ import (
 )
 
 type Repository struct {
-	db   *gorm.DB
+	DB   *gorm.DB
 	Post post.PostRepository
 	Tag  tag.TagRepository
 }
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
-		db:   db,
+		DB:   db,
 		Post: post.NewPostRepository(db),
 		Tag:  tag.NewTagRepository(db),
 	}

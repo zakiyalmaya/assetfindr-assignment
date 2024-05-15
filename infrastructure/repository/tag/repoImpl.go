@@ -14,21 +14,11 @@ func NewTagRepository(db *gorm.DB) TagRepository {
 	return &tagRepoImpl{db: db}
 }
 
-func (t *tagRepoImpl) Create(tag *model.Tag) error {
-	if err := t.db.Create(tag).Error; err != nil {
-		log.Println("error creating tag: ", err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func (t *tagRepoImpl) GetByLabel(label string) (*model.Tag, error) {
-	var tag model.Tag
-	if err := t.db.Where("label = ?", label).First(&tag).Error; err != nil {
-		log.Println("error getting tag by label: ", err.Error())
+func (t *tagRepoImpl) CreateOrGet(tag *model.Tag, tx *gorm.DB) (*model.Tag, error) {
+	if err := tx.FirstOrCreate(&tag, &model.Tag{Label: tag.Label}).Error; err != nil {
+		log.Println("error creating or getting tag: ", err.Error())
 		return nil, err
 	}
 
-	return &tag, nil
+	return tag, nil
 }

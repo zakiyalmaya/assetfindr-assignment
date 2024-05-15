@@ -2,7 +2,6 @@ package application
 
 import (
 	"log"
-	"sync"
 
 	"github.com/zakiyalmaya/assetfindr-assignment/infrastructure/repository"
 	"github.com/zakiyalmaya/assetfindr-assignment/model"
@@ -17,46 +16,38 @@ func NewService(repo *repository.Repository) Service {
 	return &serviceImpl{repo: repo}
 }
 
-func (p *serviceImpl) Create(request *model.CreatePostRequest) error {
-	var wg sync.WaitGroup
-	tags := make([]*model.Tag, len(request.Tags))
-	errChan := make(chan error, len(request.Tags))
-
-	for i, label := range request.Tags {
-		wg.Add(1)
-		go func(i int, label string) {
-			defer wg.Done()
-
-			tag, err := p.repo.Tag.GetByLabel(label)
-			if err == gorm.ErrRecordNotFound {
-				tag = &model.Tag{Label: label}
-				if err := p.repo.Tag.Create(tag); err != nil {
-					errChan <- err
-					return
-				}
-			} else if err != nil {
-				errChan <- err
-				return
-			}
-
-			tags[i] = tag
-		}(i, label)
-	}
-	wg.Wait()
-	close(errChan)
-
-	for err := range errChan {
-		if err != nil {
-			log.Println("error creating or getting tag: ", err.Error())
-			return err
+func (p *serviceImpl) Create(request *model.PostRequest) error {
+	tx := p.repo.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
 		}
+	}()
+
+	tags, err := p.fetchTags(request.Tags, tx)
+	if err != nil {
+		log.Println("error fetching tags: ", err.Error())
+		tx.Rollback()
+		return err
 	}
 
-	return p.repo.Post.Create(&model.Post{
+	if err := p.repo.Post.Create(&model.Post{
 		Title:   request.Title,
 		Content: request.Content,
 		Tags:    tags,
-	})
+	}, tx); err != nil {
+		log.Println("error creating post: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Println("error committing transaction: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
 func (p *serviceImpl) GetAll() ([]*model.Post, error) {
@@ -67,10 +58,69 @@ func (p *serviceImpl) GetByID(id int) (*model.Post, error) {
 	return p.repo.Post.GetByID(id)
 }
 
-func (p *serviceImpl) Update(post *model.Post) error {
-	return p.repo.Post.Update(post)
+func (p *serviceImpl) Update(id int, request *model.PostRequest) error {
+	tx := p.repo.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	existingPost, err := p.repo.Post.GetByID(id, tx)
+	if err != nil {
+		log.Println("error getting post: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	tags, err := p.fetchTags(request.Tags, tx)
+	if err != nil {
+		log.Println("error fetching tags: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	updatedPost := &model.Post{
+		ID:      existingPost.ID,
+		Title:   request.Title,
+		Content: request.Content,
+		Tags:    tags,
+	}
+	if err := p.repo.Post.Update(updatedPost, tx); err != nil {
+		log.Println("error updating post: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	if err := p.repo.Post.Assosiate(updatedPost, tags, tx); err != nil {
+		log.Println("error assosiating post: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Println("error committing transaction: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
 func (p *serviceImpl) Delete(id int) error {
 	return p.repo.Post.Delete(id)
+}
+
+func (p *serviceImpl) fetchTags(requestTags []string, tx *gorm.DB) ([]*model.Tag, error) {
+	tags := make([]*model.Tag, len(requestTags))
+	for i, label := range requestTags {
+		tag, err := p.repo.Tag.CreateOrGet(&model.Tag{Label: label}, tx)
+		if err != nil {
+			return nil, err
+		}
+
+		tags[i] = tag
+	}
+
+	return tags, nil
 }

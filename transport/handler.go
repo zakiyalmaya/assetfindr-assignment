@@ -12,4 +12,5 @@ func Handler(service application.Service, r *gin.Engine) {
 	r.POST("/posts", c.Create)
 	r.GET("/posts", c.GetAll)
 	r.GET("/posts/:id", c.GetByID)
+	r.PUT("/posts/:id", c.Update)
 }
