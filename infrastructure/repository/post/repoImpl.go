@@ -1,6 +1,8 @@
 package post
 
 import (
+	"log"
+
 	"gorm.io/gorm"
 
 	"github.com/zakiyalmaya/assetfindr-assignment/model"
@@ -16,6 +18,7 @@ func NewPostRepository(db *gorm.DB) PostRepository {
 
 func (p *postRepoImpl) Create(post *model.Post) error {
 	if err := p.db.Create(post).Error; err != nil {
+		log.Println("errorRepository: ", err.Error())
 		return err
 	}
 
@@ -25,6 +28,7 @@ func (p *postRepoImpl) Create(post *model.Post) error {
 func (p *postRepoImpl) GetAll() ([]*model.Post, error) {
 	var posts []*model.Post
 	if err := p.db.Preload("Tags").Find(&posts).Error; err != nil {
+		log.Println("errorRepository: ", err.Error())
 		return nil, err
 	}
 
@@ -33,7 +37,8 @@ func (p *postRepoImpl) GetAll() ([]*model.Post, error) {
 
 func (p *postRepoImpl) GetByID(id int) (*model.Post, error) {
 	var post *model.Post
-	if err := p.db.Preload("Tags").First(post, id).Error; err != nil {
+	if err := p.db.Preload("Tags").First(&post, id).Error; err != nil {
+		log.Println("errorRepository: ", err.Error())
 		return nil, err
 	}
 
@@ -42,6 +47,7 @@ func (p *postRepoImpl) GetByID(id int) (*model.Post, error) {
 
 func (p *postRepoImpl) Update(post *model.Post) error {
 	if err := p.db.Save(post).Error; err != nil {
+		log.Println("errorRepository: ", err.Error())
 		return err
 	}
 
@@ -50,6 +56,7 @@ func (p *postRepoImpl) Update(post *model.Post) error {
 
 func (p *postRepoImpl) Delete(id int) error {
 	if err := p.db.Delete(&model.Post{}, id).Error; err != nil {
+		log.Println("errorRepository: ", err.Error())
 		return err
 	}
 
