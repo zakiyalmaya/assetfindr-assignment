@@ -9,8 +9,9 @@ import (
 func Handler(service application.Service, r *gin.Engine) {
 	c := controller.NewController(service)
 
-	r.POST("/posts", c.Create)
-	r.GET("/posts", c.GetAll)
-	r.GET("/posts/:id", c.GetByID)
-	r.PUT("/posts/:id", c.Update)
+	r.POST("/api/posts", c.Create)
+	r.GET("/api/posts", c.GetAll)
+	r.GET("/api/posts/:id", c.GetByID)
+	r.PUT("/api/posts/:id", c.Update)
+	r.DELETE("/api/posts/:id", c.Delete)
 }

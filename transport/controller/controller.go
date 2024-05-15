@@ -98,3 +98,19 @@ func (p *Controller) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, model.HTTPSuccessResponse(nil))
 }
+
+func (p *Controller) Delete(c *gin.Context) {
+	id := c.Param("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.HTTPErrorResponse("invalid id"))
+		return
+	}
+
+	if err := p.service.Delete(idInt); err != nil {
+		c.JSON(http.StatusInternalServerError, model.HTTPErrorResponse(err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, model.HTTPSuccessResponse(nil))
+}

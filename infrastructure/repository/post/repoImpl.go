@@ -69,8 +69,20 @@ func (p *postRepoImpl) Update(post *model.Post, tx ...*gorm.DB) error {
 	return nil
 }
 
-func (p *postRepoImpl) Delete(id int) error {
-	if err := p.db.Delete(&model.Post{}, id).Error; err != nil {
+func (p *postRepoImpl) Delete(id int, tx ...*gorm.DB) error {
+	db := p.db
+	if len(tx) > 0 {
+		db = tx[0]
+	}
+
+	// delete post_tags
+	if err := db.Exec("DELETE FROM post_tags WHERE post_id = ?", id).Error; err != nil {
+		log.Println("errorRepository: ", err.Error())
+		return err
+	}
+
+	// delete post
+	if err := db.Delete(&model.Post{}, id).Error; err != nil {
 		log.Println("errorRepository: ", err.Error())
 		return err
 	}

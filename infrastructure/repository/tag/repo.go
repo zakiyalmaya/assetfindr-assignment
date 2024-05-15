@@ -6,5 +6,5 @@ import (
 )
 
 type TagRepository interface {
-	CreateOrGet(tag *model.Tag, tx *gorm.DB) (*model.Tag, error)
+	GetOrCreate(tag *model.Tag, tx *gorm.DB) (*model.Tag, error)
 }

@@ -24,7 +24,7 @@ func (p *serviceImpl) Create(request *model.PostRequest) error {
 		}
 	}()
 
-	tags, err := p.fetchTags(request.Tags, tx)
+	tags, err := p.getOrCreateTags(request.Tags, tx)
 	if err != nil {
 		log.Println("error fetching tags: ", err.Error())
 		tx.Rollback()
@@ -73,7 +73,7 @@ func (p *serviceImpl) Update(id int, request *model.PostRequest) error {
 		return err
 	}
 
-	tags, err := p.fetchTags(request.Tags, tx)
+	tags, err := p.getOrCreateTags(request.Tags, tx)
 	if err != nil {
 		log.Println("error fetching tags: ", err.Error())
 		tx.Rollback()
@@ -108,13 +108,39 @@ func (p *serviceImpl) Update(id int, request *model.PostRequest) error {
 }
 
 func (p *serviceImpl) Delete(id int) error {
-	return p.repo.Post.Delete(id)
+	tx := p.repo.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	_, err := p.repo.Post.GetByID(id, tx)
+	if err != nil {
+		log.Println("error getting post: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+	
+	if err := p.repo.Post.Delete(id, tx); err != nil {
+		log.Println("error deleting post: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Println("error committing transaction: ", err.Error())
+		tx.Rollback()
+		return err
+	}
+	
+	return nil
 }
 
-func (p *serviceImpl) fetchTags(requestTags []string, tx *gorm.DB) ([]*model.Tag, error) {
+func (p *serviceImpl) getOrCreateTags(requestTags []string, tx *gorm.DB) ([]*model.Tag, error) {
 	tags := make([]*model.Tag, len(requestTags))
 	for i, label := range requestTags {
-		tag, err := p.repo.Tag.CreateOrGet(&model.Tag{Label: label}, tx)
+		tag, err := p.repo.Tag.GetOrCreate(&model.Tag{Label: label}, tx)
 		if err != nil {
 			return nil, err
 		}
