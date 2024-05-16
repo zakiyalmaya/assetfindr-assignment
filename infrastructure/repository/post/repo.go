@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate go run github.com/golang/mock/mockgen --build_flags=--mod=vendor -package mocks -source=repo.go -destination=PostRepository.go
 type PostRepository interface {
 	Create(post *model.Post, tx ...*gorm.DB) error
 	GetAll() ([]*model.Post, error)
